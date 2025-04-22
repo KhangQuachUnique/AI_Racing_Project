@@ -110,7 +110,7 @@ class Car:
             return -100  # Phạt nặng nếu xe chết
 
         # Phần thưởng dựa trên tốc độ
-        speed_reward = (self.speed - 7) 
+        speed_reward = 6 * (2 / (1 + np.exp(-0.13 * (self.speed - 7))) - 1)  # Tăng tốc độ tối đa lên 20
 
         # Phần thưởng dựa trên khoảng cách di chuyển
         distance_reward = self.distance / max(self.time, 1) / 5  # Tránh chia cho 0
@@ -135,7 +135,7 @@ class Car:
 
         good_angle_reward = abs(good_angle - old_angle) - abs(good_angle - self.angle)
         if good_angle_reward < 0:
-            good_angle_reward = -5
+            good_angle_reward = -6
         else:
             good_angle_reward = 4
 

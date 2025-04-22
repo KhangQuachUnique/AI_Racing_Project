@@ -31,7 +31,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=7, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=100000, 
+    def __init__(self, input_dim=7, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -108,7 +108,7 @@ class Agent:
         self.optimizer.step()
         return loss
 
-    def train(self, env, num_episodes=10000, update_status=None):
+    def train(self, env, num_episodes=10000, update_status=None, render=True):
         self.steps_done = 0  # Reset steps_done for each training session
         self.stop_training = False  # Reset cờ dừng huấn luyện
         self.logger = TensorBoardLogger(log_dir="logs/train")  # Khởi tạo TensorBoard logger
@@ -159,7 +159,8 @@ class Agent:
                     epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
                     env.update_info(episode + 1, total_reward, episode_loss / max(steps, 1), epsilon, steps)
 
-                    env.render()
+                    if render:
+                        env.render()
                     
                     if done:
                         break
@@ -224,10 +225,3 @@ class Agent:
             "eps_decay": self.eps_decay,
             "target_update": self.target_update
         }
-
-# Example usage:
-# INPUT_DIM = 7    # observation từ CarEnv: 5 giá trị (từ các radar)
-# OUTPUT_DIM = 4   # 4 hành động: quay trái, quay phải, giảm tốc, tăng tốc
-# agent = Agent(INPUT_DIM, OUTPUT_DIM)
-# env = CarEnv(map_choice="Random")
-# agent.train(env, num_episodes=10000)
