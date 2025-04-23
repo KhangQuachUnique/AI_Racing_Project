@@ -94,11 +94,11 @@ class Car:
             self.check_radar(d, game_map)
 
     def get_data(self):
-        return_values = np.zeros(self.radars_size + 2, dtype=int)
+        return_values = np.zeros(self.radars_size + 1, dtype=int)
         for i, radar in enumerate(self.radars[:self.radars_size]):
             return_values[i] = int(radar[1] / 30)
-        return_values[5] = int(self.angle / 360)
-        return_values[6] = int(self.speed / 20)
+            return_values[5] = int(self.speed / 20)
+            # return_values[6] = int(self.angle / 360)
         return return_values
 
     def is_alive(self):
@@ -107,10 +107,10 @@ class Car:
     def get_reward(self, old_angle):
         total_reward = 0
         if not self.alive:
-            return -100  # Phạt nặng nếu xe chết
+            return -50  # Phạt nặng nếu xe chết
 
         # Phần thưởng dựa trên tốc độ
-        speed_reward = 6 * (2 / (1 + np.exp(-0.13 * (self.speed - 7))) - 1)  # Tăng tốc độ tối đa lên 20
+        speed_reward = 4 * (2 / (1 + np.exp(-0.13 * (self.speed - 7))) - 1)  # Tăng tốc độ tối đa lên 20
 
         # Phần thưởng dựa trên khoảng cách di chuyển
         distance_reward = self.distance / max(self.time, 1) / 5  # Tránh chia cho 0

@@ -11,7 +11,7 @@ HEIGHT = 1080
 class CarEnv:
     def __init__(self, map_choice="Random"):
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
 
         # Font để hiển thị thông tin

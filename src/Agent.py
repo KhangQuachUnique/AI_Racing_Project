@@ -6,7 +6,6 @@ import torch.optim as optim
 import pygame 
 import os
 from ReplayBuffer import ReplayBuffer  
-from tensorboard_logger import TensorBoardLogger
 
 # ---------------------------
 # Định nghĩa mạng DQN
@@ -15,9 +14,7 @@ class DQN(nn.Module):
     def __init__(self, INPUT_DIM, OUTPUT_DIM):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(INPUT_DIM, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Linear(INPUT_DIM, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
@@ -31,7 +28,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=7, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
+    def __init__(self, input_dim=6, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=100000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -111,7 +108,6 @@ class Agent:
     def train(self, env, num_episodes=10000, update_status=None, render=True):
         self.steps_done = 0  # Reset steps_done for each training session
         self.stop_training = False  # Reset cờ dừng huấn luyện
-        self.logger = TensorBoardLogger(log_dir="logs/train")  # Khởi tạo TensorBoard logger
         try:
             for episode in range(num_episodes):
                 if self.stop_training:  # Kiểm tra cờ dừng huấn luyện
