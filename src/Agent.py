@@ -161,10 +161,10 @@ class Agent:
                     if done:
                         break
                 
-                # Log dữ liệu vào TensorBoard sau mỗi episode
-                self.logger.log_scalar("Total Reward", total_reward, episode)
-                self.logger.log_scalar("Average Loss", episode_loss / max(steps, 1), episode)
-                self.logger.log_scalar("Epsilon", epsilon, episode)
+                # # Log dữ liệu vào TensorBoard sau mỗi episode
+                # self.logger.log_scalar("Total Reward", total_reward, episode)
+                # self.logger.log_scalar("Average Loss", episode_loss / max(steps, 1), episode)
+                # self.logger.log_scalar("Epsilon", epsilon, episode)
 
                 # Update status in the UI if provided
                 if update_status:
@@ -173,7 +173,7 @@ class Agent:
             if update_status:
                 update_status(f"Training interrupted: {e}")
         finally:
-            self.logger.close()  # Đóng TensorBoard logger
+            # self.logger.close()  # Đóng TensorBoard logger
             env.close()
 
     def test(self, env, num_episodes=10):
