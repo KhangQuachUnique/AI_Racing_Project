@@ -1,6 +1,7 @@
 import math
 import random
 import torch
+import csv 
 import torch.nn as nn
 import torch.optim as optim
 import pygame 
@@ -42,6 +43,7 @@ class Agent:
         self.eps_decay = eps_decay
         self.target_update = target_update
         self.device = "cuda"
+        self.training_data = []
         
         self.policy_net = DQN(input_dim, output_dim).to(self.device)
         self.target_net = DQN(input_dim, output_dim).to(self.device)
@@ -50,6 +52,17 @@ class Agent:
         self.memory = ReplayBuffer(memory_capacity)
         self.steps_done = 0
         self.stop_training = False  # Biến cờ để dừng huấn luyện
+
+    def save_training_data(self):
+        """Lưu dữ liệu huấn luyện vào file CSV."""
+        if not os.path.exists("training_data"):
+            os.makedirs("training_data")
+        file_path = f"training_data/training_data_{self.name}.csv"
+        with open(file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Episode", "Total Reward", "Average Reward", "Loss", "Epsilon", "Steps"])
+            for data in self.training_data:
+                writer.writerow(data)
 
     def get_training_parameters(self, batch_size, gamma, lr, eps_start, eps_end, eps_decay, target_update):
         self.batch_size = batch_size
@@ -98,7 +111,9 @@ class Agent:
         td_errors = (q_values - expected_q_values).abs().cpu().detach().numpy().squeeze()
         self.memory.update_priorities(indices, td_errors)
 
-        loss = (weights * nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)).mean()
+        loss_per_sample = nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)
+        # print(loss_per_sample.mean())
+        loss = (weights * loss_per_sample).mean()
         
         self.optimizer.zero_grad()
         loss.backward()
@@ -146,6 +161,7 @@ class Agent:
                     state = next_state
                     
                     loss = self.optimize_model()
+
                     if loss is not None:
                         episode_loss += loss.item()
                     
@@ -153,6 +169,7 @@ class Agent:
                         self.target_net.load_state_dict(self.policy_net.state_dict())
                     
                     epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
+
                     env.update_info(episode + 1, total_reward, episode_loss / max(steps, 1), epsilon, steps)
 
                     if render:
@@ -161,14 +178,12 @@ class Agent:
                     if done:
                         break
                 
-                # # Log dữ liệu vào TensorBoard sau mỗi episode
-                # self.logger.log_scalar("Total Reward", total_reward, episode)
-                # self.logger.log_scalar("Average Loss", episode_loss / max(steps, 1), episode)
-                # self.logger.log_scalar("Epsilon", epsilon, episode)
+                self.training_data.append([episode + 1, total_reward, total_reward/steps, episode_loss/max(steps, 1), epsilon, steps])
 
                 # Update status in the UI if provided
                 if update_status:
                     update_status(f"Episode: {episode + 1}/{num_episodes} - Reward: {total_reward:.2f}")
+            self.save_training_data()  # Lưu dữ liệu huấn luyện vào file CSV
         except Exception as e:
             if update_status:
                 update_status(f"Training interrupted: {e}")

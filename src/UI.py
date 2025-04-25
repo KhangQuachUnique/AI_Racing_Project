@@ -486,6 +486,7 @@ class MainWindow(QMainWindow):
                 self.agent.target_net.load_state_dict(checkpoint['model_state_dict'])
                 self.agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
                 self.current_model_name = os.path.basename(model_path)  # Lưu tên model hiện tại
+                self.agent.name = self.current_model_name.replace(".pth", "")
                 self.status_label.setText(f"Status: Model '{self.current_model_name}' loaded successfully.")
                 self.agent_label.setText(f"Agent: {self.current_model_name}")
                 self.get_model_info()  # Cập nhật thông tin model
@@ -515,6 +516,7 @@ class MainWindow(QMainWindow):
                         'optimizer_state_dict': self.agent.optimizer.state_dict()
                     }, model_path)
                     self.current_model_name = f"{model_name}.pth"  # Cập nhật tên model hiện tại
+                    self.agent.name = self.current_model_name.replace(".pth", "") 
                     self.status_label.setText(f"Status: Model '{self.current_model_name}' saved successfully.")
                     self.get_model_info()  # Cập nhật thông tin model
                 except Exception as e:

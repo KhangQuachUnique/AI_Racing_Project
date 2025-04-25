@@ -147,7 +147,7 @@ class Car:
             
         # Tổng hợp phần thưởng với trọng số
         total_reward += (distance_reward + good_angle_reward + speed_reward + distance_to_border)
-        print(f"Distance: {distance_reward}, Angle: {good_angle_reward}, Speed: {speed_reward}, Border: {distance_to_border}, Total: {total_reward}")
+        # print(f"Distance: {distance_reward}, Angle: {good_angle_reward}, Speed: {speed_reward}, Border: {distance_to_border}, Total: {total_reward}")
         return total_reward
 
     def rotate_center(self, image, angle):
