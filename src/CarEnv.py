@@ -11,7 +11,7 @@ HEIGHT = 1080
 class CarEnv:
     def __init__(self, map_choice="Random"):
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
 
         # Font để hiển thị thông tin
@@ -61,7 +61,8 @@ class CarEnv:
             if self.car.speed > 3:
                 self.car.speed -= 1
         elif action == 3:
-            self.car.speed += 1
+            if self.car.speed < 40:
+                self.car.speed += 1
         self.car.update(self.game_map)
         reward = self.car.get_reward(old_angle)
         if not self.car.is_alive():

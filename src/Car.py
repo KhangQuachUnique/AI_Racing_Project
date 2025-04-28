@@ -94,11 +94,11 @@ class Car:
             self.check_radar(d, game_map)
 
     def get_data(self):
-        return_values = np.zeros(self.radars_size + 2, dtype=int)
+        return_values = np.zeros(self.radars_size + 1, dtype=int)
         for i, radar in enumerate(self.radars[:self.radars_size]):
-            return_values[i] = int(radar[1] / 30)
-        return_values[5] = int(self.angle / 360)
-        return_values[6] = int(self.speed / 20)
+            return_values[i] = int(radar[1])  # Chia cho 300 để đưa về khoảng [0, 100]
+        # return_values[5] = int(self.angle / 360)
+        return_values[5] = int(self.speed)
         return return_values
 
     def is_alive(self):
@@ -107,15 +107,15 @@ class Car:
     def get_reward(self, old_angle):
         total_reward = 0
         if not self.alive:
-            return -100  # Phạt nặng nếu xe chết
+            return -100 # Strong penalty for collision
 
-        # Phần thưởng dựa trên tốc độ
-        speed_reward = 6 * (2 / (1 + np.exp(-0.13 * (self.speed - 7))) - 1)  # Tăng tốc độ tối đa lên 20
+        # Reward based on speed
+        speed_reward = 8 * (2 / (1 + np.exp(-0.13 * (self.speed - 7))) - 1) # Max speed reward is 8 and min is -8
+        
+        # Reward byy Average speed
+        distance_reward = self.distance / max(self.time, 1) / 3  # Tránh chia cho 0
 
-        # Phần thưởng dựa trên khoảng cách di chuyển
-        distance_reward = self.distance / max(self.time, 1) / 5  # Tránh chia cho 0
-
-        # Phần thưởng dựa trên góc tốt
+        # Reward based on good turning angle
         max_length_couple_radar = 0
         max_couple_radar = [0, 0]
         for i in range(len(self.radars)-1):
@@ -135,17 +135,17 @@ class Car:
 
         good_angle_reward = abs(good_angle - old_angle) - abs(good_angle - self.angle)
         if good_angle_reward < 0:
-            good_angle_reward = -6
+            good_angle_reward = -15
         else:
-            good_angle_reward = 4
+            good_angle_reward = 9
 
-        # Cải thiện logic tính distance_to_border
+        # Reward based on distance to border to avoid collision
         distance_to_border = 0
         for i, radar in enumerate(self.radars):
-            distance_to_border -= max(0, (25 - radar[1]) * 2)
+            distance_to_border -= max(0, ((25 - radar[1]) * 2))
 
             
-        # Tổng hợp phần thưởng với trọng số
+        # Total reward calculation
         total_reward += (distance_reward + good_angle_reward + speed_reward + distance_to_border)
         print(f"Distance: {distance_reward}, Angle: {good_angle_reward}, Speed: {speed_reward}, Border: {distance_to_border}, Total: {total_reward}")
         return total_reward

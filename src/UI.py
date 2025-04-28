@@ -364,6 +364,11 @@ class MainWindow(QMainWindow):
         stop_training_btn.clicked.connect(self.stop_training)
         button_layout.addWidget(stop_training_btn, 3, 1)
 
+        # save_logs_btn = QPushButton("Save Log Training")
+        # save_logs_btn.setFont(button_font)
+        # save_logs_btn.clicked.connect(self.close)
+        # button_layout.addWidget(save_logs_btn, 4, 0)
+
         exit_btn = QPushButton("Exit")
         exit_btn.setFont(button_font)
         exit_btn.clicked.connect(self.close)
@@ -410,6 +415,8 @@ class MainWindow(QMainWindow):
         shadow.setColor(QColor(0, 0, 0, 160))
         shadow.setOffset(0, 4)
         widget.setGraphicsEffect(shadow)
+
+
 
     def closeEvent(self, event):
         # Đảm bảo pygame được tắt khi cửa sổ PyQt đóng

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pygame 
+import csv
 import os
 from ReplayBuffer import ReplayBuffer  
 from tensorboard_logger import TensorBoardLogger
@@ -15,13 +16,11 @@ class DQN(nn.Module):
     def __init__(self, INPUT_DIM, OUTPUT_DIM):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(INPUT_DIM, 256),
+            nn.Linear(INPUT_DIM, 128),
             nn.ReLU(),
-            nn.Linear(256, 128),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, OUTPUT_DIM)
+            nn.Linear(128, OUTPUT_DIM)
         )
     
     def forward(self, x):
@@ -31,7 +30,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=7, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
+    def __init__(self, input_dim=6, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -52,7 +51,10 @@ class Agent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr)
         self.memory = ReplayBuffer(memory_capacity)
         self.steps_done = 0
+        self.episode_log = []
+        self.step_log = []
         self.stop_training = False  # Biến cờ để dừng huấn luyện
+
 
     def get_training_parameters(self, batch_size, gamma, lr, eps_start, eps_end, eps_decay, target_update):
         self.batch_size = batch_size
@@ -111,7 +113,6 @@ class Agent:
     def train(self, env, num_episodes=10000, update_status=None, render=True):
         self.steps_done = 0  # Reset steps_done for each training session
         self.stop_training = False  # Reset cờ dừng huấn luyện
-        self.logger = TensorBoardLogger(log_dir="logs/train")  # Khởi tạo TensorBoard logger
         try:
             for episode in range(num_episodes):
                 if self.stop_training:  # Kiểm tra cờ dừng huấn luyện
@@ -158,6 +159,11 @@ class Agent:
                     
                     epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
                     env.update_info(episode + 1, total_reward, episode_loss / max(steps, 1), epsilon, steps)
+                    
+                    if loss is not None:
+                        self.step_log.append((episode + 1, loss.item(), reward, epsilon))
+                    else:
+                        self.step_log.append((episode + 1, 0, reward, epsilon))
 
                     if render:
                         env.render()
@@ -165,14 +171,14 @@ class Agent:
                     if done:
                         break
                 
-                # Log dữ liệu vào TensorBoard sau mỗi episode
-                self.logger.log_scalar("Total Reward", total_reward, episode)
-                self.logger.log_scalar("Average Loss", episode_loss / max(steps, 1), episode)
-                self.logger.log_scalar("Epsilon", epsilon, episode)
+                self.episode_log.append((episode + 1, total_reward, total_reward / max((steps, 1)), episode_loss / max(steps, 1), steps))
 
                 # Update status in the UI if provided
                 if update_status:
                     update_status(f"Episode: {episode + 1}/{num_episodes} - Reward: {total_reward:.2f}")
+
+            self.save_training_data("model_1")
+
         except Exception as e:
             if update_status:
                 update_status(f"Training interrupted: {e}")
@@ -225,3 +231,26 @@ class Agent:
             "eps_decay": self.eps_decay,
             "target_update": self.target_update
         }
+
+    def save_training_data(self, filename):
+        """Lưu dữ liệu huấn luyện vào file CSV."""
+        try:
+            os.makedirs("./training_log", exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+
+            with open(f"./training_log/{filename}_episode.csv", mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                # Ghi tiêu đề cột
+                writer.writerow(["Episode", "Total Reward", "Average Reward", "Average Loss", "Steps"])
+                # Ghi dữ liệu từng tập
+                for entry in self.episode_log:
+                    writer.writerow(entry)
+            with open(f"./training_log/{filename}_step.csv", mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                # Ghi tiêu đề cột
+                writer.writerow(["Episode", "Loss", "Reward", "Epsilon"])
+                # Ghi dữ liệu từng bước
+                for entry in self.step_log:
+                    writer.writerow(entry)
+        except Exception as e:
+            print(f"Error saving training data: {e}")
+
