@@ -104,7 +104,7 @@ def plot_scatter_step_log(file_path, x_column_index, y_column_index, title="Scat
 
 # Ví dụ sử dụng
 plot_scatter_from_csv(
-    file_path="./training_log/model_1_episode.csv",
+    file_path="./training_log/model_2_episode.csv",
     x_column="Episode",
     y_column="Average Loss",
     title="Episode vs Average Loss",
@@ -113,7 +113,7 @@ plot_scatter_from_csv(
 )
 
 plot_scatter_from_csv(
-    file_path="./training_log/model_1_episode.csv",
+    file_path="./training_log/model_2_episode.csv",
     x_column="Episode",
     y_column="Total Reward",
     title="Episode vs Total Reward",
@@ -122,7 +122,7 @@ plot_scatter_from_csv(
 )
 
 plot_scatter_step_log(
-    file_path="./training_log/model_1_step.csv",
+    file_path="./training_log/model_2_step.csv",
     x_column_index=0,  # Cột Episode
     y_column_index=1,  # Cột Reward
     title="Step vs Loss",

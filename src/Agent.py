@@ -6,8 +6,7 @@ import torch.optim as optim
 import pygame 
 import csv
 import os
-from ReplayBuffer import ReplayBuffer  
-from tensorboard_logger import TensorBoardLogger
+from ReplayBuffer import ReplayBuffer
 
 # ---------------------------
 # Định nghĩa mạng DQN
@@ -83,7 +82,7 @@ class Agent:
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
             return None
-        # print(len(self.memory))
+        
         transitions, indices, weights = self.memory.sample(self.batch_size)
         batch = list(zip(*transitions))
         
@@ -105,9 +104,11 @@ class Agent:
 
         loss = (weights * nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)).mean()
         
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        if self.steps_done % 4 == 0:
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
         return loss
 
     def train(self, env, num_episodes=10000, update_status=None, render=True):
@@ -151,6 +152,7 @@ class Agent:
                     state = next_state
                     
                     loss = self.optimize_model()
+                        
                     if loss is not None:
                         episode_loss += loss.item()
                     
@@ -177,13 +179,12 @@ class Agent:
                 if update_status:
                     update_status(f"Episode: {episode + 1}/{num_episodes} - Reward: {total_reward:.2f}")
 
-            self.save_training_data("model_1")
+            self.save_training_data("model_2")
 
         except Exception as e:
             if update_status:
                 update_status(f"Training interrupted: {e}")
         finally:
-            self.logger.close()  # Đóng TensorBoard logger
             env.close()
 
     def test(self, env, num_episodes=10):
