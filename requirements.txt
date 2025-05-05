@@ -2,6 +2,5 @@ torch
 numpy
 pygame
 matplotlib
-tensorboard
 torchvision
 PyQt5

@@ -61,7 +61,7 @@ class CarEnv:
             if self.car.speed > 3:
                 self.car.speed -= 1
         elif action == 3:
-            if self.car.speed < 50:
+            if self.car.speed < 20:
                 self.car.speed += 1
         self.car.update(self.game_map)
         reward = self.car.get_reward(old_angle)

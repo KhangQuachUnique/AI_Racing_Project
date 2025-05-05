@@ -15,9 +15,9 @@ class DQN(nn.Module):
     def __init__(self, INPUT_DIM, OUTPUT_DIM):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(INPUT_DIM, 128),
+            nn.Linear(INPUT_DIM, 256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 128),
             nn.ReLU(),
             nn.Linear(128, OUTPUT_DIM)
         )
@@ -29,7 +29,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=6, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
+    def __init__(self, input_dim=5, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -63,8 +63,7 @@ class Agent:
         self.eps_end = eps_end
         self.eps_decay = eps_decay
         self.target_update = target_update
-        # print(f"Training parameters updated: gamma={gamma}, lr={lr}, eps_start={eps_start}, eps_end={eps_end}, eps_decay={eps_decay}, target_update={target_update}")
-
+        
     def stop(self):
         self.stop_training = True  # Đặt cờ để dừng huấn luyện
 
@@ -104,10 +103,10 @@ class Agent:
 
         loss = (weights * nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)).mean()
         
-        if self.steps_done % 4 == 0:
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+        # if self.steps_done % 4 == 0:
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         return loss
 
@@ -126,7 +125,7 @@ class Agent:
                 episode_loss = 0.0
                 steps = 0
                 
-                while True:
+                while steps < 1000:
                     # Xử lý sự kiện pygame để tránh bị đơ khi alt-tab
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
@@ -148,7 +147,15 @@ class Agent:
                     total_reward += reward
                     steps += 1
                     
-                    self.memory.push(state, action, reward, next_state, done, priority=1.0)
+                    with torch.no_grad():
+                        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+                        next_state_tensor = torch.FloatTensor(next_state).unsqueeze(0).to(self.device)
+                        current_q_value = self.policy_net(state_tensor)[0, action].item()
+                        next_q_value = self.target_net(next_state_tensor).max(1)[0].item() if not done else 0.0
+                        target_q_value = reward + self.gamma * next_q_value
+                        priority = abs(current_q_value - target_q_value)
+                    
+                    self.memory.push(state, action, reward, next_state, done, priority=priority)
                     state = next_state
                     
                     loss = self.optimize_model()
@@ -163,13 +170,13 @@ class Agent:
                     env.update_info(episode + 1, total_reward, episode_loss / max(steps, 1), epsilon, steps)
                     
                     if loss is not None:
-                        self.step_log.append((episode + 1, loss.item(), reward, epsilon))
+                        self.step_log.append((episode + 1, loss.item(), current_q_value, epsilon))
                     else:
-                        self.step_log.append((episode + 1, 0, reward, epsilon))
+                        self.step_log.append((episode + 1, 0, current_q_value, epsilon))
 
                     if render:
                         env.render()
-                    
+
                     if done:
                         break
                 
@@ -179,7 +186,7 @@ class Agent:
                 if update_status:
                     update_status(f"Episode: {episode + 1}/{num_episodes} - Reward: {total_reward:.2f}")
 
-            self.save_training_data("model_2")
+            self.save_training_data("model_7")
 
         except Exception as e:
             if update_status:
@@ -248,7 +255,7 @@ class Agent:
             with open(f"./training_log/{filename}_step.csv", mode='w', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 # Ghi tiêu đề cột
-                writer.writerow(["Episode", "Loss", "Reward", "Epsilon"])
+                writer.writerow(["Episode", "Loss", "Q-value", "Epsilon"])
                 # Ghi dữ liệu từng bước
                 for entry in self.step_log:
                     writer.writerow(entry)
