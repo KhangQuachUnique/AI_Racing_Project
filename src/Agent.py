@@ -29,7 +29,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=5, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=10000, 
+    def __init__(self, input_dim=5, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=20000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -191,6 +191,7 @@ class Agent:
         except Exception as e:
             if update_status:
                 update_status(f"Training interrupted: {e}")
+            self.save_training_data("model_7")
         finally:
             env.close()
 

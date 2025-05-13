@@ -201,7 +201,7 @@ class MainWindow(QMainWindow):
         input_agent_layout.addRow(QLabel("Episodes:", font=QFont("Arial", 12)), self.num_episodes_input)
 
         self.map_selector = QComboBox()
-        self.map_selector.addItems(["Random", "Map 1", "Map 2", "Map 3", "Map 4", "Map 5", "Map 6"])
+        self.map_selector.addItems(["Random", "Map 1", "Map 2", "Map 3"])
         self.map_selector.setFont(QFont("Arial", 12))
         self.map_selector.setItemDelegate(ComboBoxItemDelegate())
         self.map_selector.view().setUniformItemSizes(True)
@@ -366,16 +366,6 @@ class MainWindow(QMainWindow):
         test_agent_btn.setFont(button_font)
         test_agent_btn.clicked.connect(self.test_agent)
         button_layout.addWidget(test_agent_btn, 3, 1)
-
-        save_logs_btn = QPushButton("Save Log Training")
-        save_logs_btn.setFont(button_font)
-        save_logs_btn.clicked.connect(self.save_training_log)
-        button_layout.addWidget(save_logs_btn, 4, 0)
-
-        load_logs_btn = QPushButton("Load Training Log")
-        load_logs_btn.setFont(button_font)
-        load_logs_btn.clicked.connect(self.load_training_log)
-        button_layout.addWidget(load_logs_btn, 4, 1)
 
         exit_btn = QPushButton("Exit")
         exit_btn.setFont(button_font)

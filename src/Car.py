@@ -127,19 +127,19 @@ class Car:
             ratio = self.radars[max_couple_radar[1]][1] / self.radars[max_couple_radar[0]][1]
             good_angle = (angles[max_couple_radar[1]] + self.good_angle) * ratio
 
-        good_angle_reward = abs(good_angle - old_angle) - abs(good_angle - self.angle)
-        if good_angle_reward < 0:
-            good_angle_reward = -5 
+        good_turn = abs(good_angle - old_angle) - abs(good_angle - self.angle)
+        if good_turn < 0:
+            good_angle_reward = -7 
         else:
-            good_angle_reward = 5 
+            good_angle_reward = 7
 
         # Phần thưởng cho vị trí xe ở giữa đường 
-        dist_to_left_wall = (self.radars[0][1] + self.radars[1][1])/2
-        dist_to_right_wall = (self.radars[3][1] + self.radars[4][1])/2
-        center_reward = max(-3, 3 - abs(dist_to_left_wall - dist_to_right_wall)/10)
+        dist_to_left_wall = (self.radars[0][1] + self.radars[1][1])/2 
+        dist_to_right_wall = (self.radars[3][1] + self.radars[4][1])/2 
+        center_reward = max(-7, 7 - abs(dist_to_left_wall - dist_to_right_wall)/10)
 
         # Tính tổng phần thưởng
-        total_reward += ((average_speed_by_step_reward + good_angle_reward + speed_reward + center_reward)/16) # Chuẩn hóa tổng phần thưởng về khoảng [-1, 1]
+        total_reward += ((average_speed_by_step_reward + good_angle_reward + speed_reward + center_reward)/21) # Chuẩn hóa tổng phần thưởng về khoảng [-1, 1]
         print(f"Distance: {average_speed_by_step_reward}, Angle: {good_angle_reward}, Speed: {speed_reward}, Center: {center_reward}, Total: {total_reward}")
         return total_reward
 
