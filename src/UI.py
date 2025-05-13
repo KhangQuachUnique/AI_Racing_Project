@@ -103,16 +103,17 @@ class MainWindow(QMainWindow):
             }
             QLabel {
                 color: #D4D4D4;
-                font-size: 16px;
+                font-size: 18px;
             }
             QPushButton {
                 background-color: #007ACC;  /* Màu xanh giống VS Code */
                 color: #FFFFFF;
                 border: none;
+                height: 30px;
                 border-radius: 6px;
                 padding: 10px;
                 font-weight: bold;
-                font-size: 16px;
+                font-size: 18px;
             }
             QPushButton:hover {
                 background-color: #005A9E;  /* Màu xanh đậm hơn khi hover */
@@ -123,7 +124,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #3C3C3C;
                 border-radius: 6px;
                 padding: 8px;
-                font-size: 16px;
+                font-size: 18px;
             }
             QComboBox {
                 background-color: #2D2D30;  /* Màu nền tối giống VS Code */
@@ -131,7 +132,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #3C3C3C;
                 border-radius: 6px;
                 padding: 8px;
-                font-size: 16px;
+                font-size: 18px;
             }
             QComboBox QAbstractItemView {
                 background-color: #252526;  /* Màu nền danh sách */
@@ -153,14 +154,14 @@ class MainWindow(QMainWindow):
                 color: #D4D4D4;
                 border: 1px solid #3C3C3C;
                 border-radius: 6px;
-                font-size: 16px;
+                font-size: 18px;
             }
             QGroupBox {
                 border: 1px solid #3C3C3C;
                 border-radius: 8px;
                 margin-top: 10px;
                 color: #D4D4D4;
-                font-size: 16px;
+                font-size: 18px;
                 padding: 12px;
             }
             QGroupBox::title {
@@ -200,7 +201,7 @@ class MainWindow(QMainWindow):
         input_agent_layout.addRow(QLabel("Episodes:", font=QFont("Arial", 12)), self.num_episodes_input)
 
         self.map_selector = QComboBox()
-        self.map_selector.addItems(["Random", "Map 1", "Map 2", "Map 3", "Map 4", "Map 5", "Map 6"])
+        self.map_selector.addItems(["Random", "Map 1", "Map 2", "Map 3"])
         self.map_selector.setFont(QFont("Arial", 12))
         self.map_selector.setItemDelegate(ComboBoxItemDelegate())
         self.map_selector.view().setUniformItemSizes(True)
@@ -310,6 +311,8 @@ class MainWindow(QMainWindow):
         input_grid_layout = QGridLayout()
         input_grid_layout.setColumnStretch(0, 5)
         input_grid_layout.setColumnStretch(1, 3)
+        input_grid_layout.setRowStretch(0, 2)
+        input_grid_layout.setRowStretch(1, 5)
         input_grid_layout.addWidget(input_agent_group, 0, 0, 2, 1)
         input_grid_layout.addWidget(model_buffer_name, 0, 1) 
         input_grid_layout.addWidget(model_info, 1, 1)
@@ -318,11 +321,11 @@ class MainWindow(QMainWindow):
 
         # Buttons group
         button_group = QGroupBox("Actions")
-        button_group.setFont(QFont("Arial", 14))
+        button_group.setFont(QFont("Arial", 20))
         button_layout = QGridLayout()
 
 
-        button_font = QFont("Arial", 14)
+        button_font = QFont("Arial", 20)
 
         load_model_btn = QPushButton("Load Model")
         load_model_btn.setFont(button_font)
@@ -367,11 +370,11 @@ class MainWindow(QMainWindow):
         exit_btn = QPushButton("Exit")
         exit_btn.setFont(button_font)
         exit_btn.clicked.connect(self.close)
-        button_layout.addWidget(exit_btn, 4, 0)
+        button_layout.addWidget(exit_btn, 5, 0)
 
         button_group.setLayout(button_layout)
         self.add_shadow(button_group)  # Thêm hiệu ứng đổ bóng
-        button_group.setFixedHeight(280)  # Set fixed height for button group
+        button_group.setFixedHeight(400)  # Set fixed height for button group
         left_layout.addWidget(button_group)
 
         # Training log
@@ -410,6 +413,8 @@ class MainWindow(QMainWindow):
         shadow.setColor(QColor(0, 0, 0, 160))
         shadow.setOffset(0, 4)
         widget.setGraphicsEffect(shadow)
+
+
 
     def closeEvent(self, event):
         # Đảm bảo pygame được tắt khi cửa sổ PyQt đóng
@@ -486,7 +491,6 @@ class MainWindow(QMainWindow):
                 self.agent.target_net.load_state_dict(checkpoint['model_state_dict'])
                 self.agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
                 self.current_model_name = os.path.basename(model_path)  # Lưu tên model hiện tại
-                self.agent.name = self.current_model_name.replace(".pth", "")
                 self.status_label.setText(f"Status: Model '{self.current_model_name}' loaded successfully.")
                 self.agent_label.setText(f"Agent: {self.current_model_name}")
                 self.get_model_info()  # Cập nhật thông tin model
@@ -516,7 +520,6 @@ class MainWindow(QMainWindow):
                         'optimizer_state_dict': self.agent.optimizer.state_dict()
                     }, model_path)
                     self.current_model_name = f"{model_name}.pth"  # Cập nhật tên model hiện tại
-                    self.agent.name = self.current_model_name.replace(".pth", "") 
                     self.status_label.setText(f"Status: Model '{self.current_model_name}' saved successfully.")
                     self.get_model_info()  # Cập nhật thông tin model
                 except Exception as e:
@@ -641,6 +644,38 @@ class MainWindow(QMainWindow):
         if self.training_thread:
             self.training_thread.stop()  # Gọi phương thức stop của TrainingThread
             self.status_label.setText("Status: Training stopped by user.")
+
+    def save_training_log(self):
+        """Chọn file và lưu thống kê huấn luyện."""
+        self.agent.save_training_data(self.current_model_name)  # Lưu log huấn luyện vào file CSV
+
+    def load_training_log(self):
+        """Chọn file training log đã lưu và vẽ biểu đồ so sánh."""
+        log_dir = "./training_log"
+        os.makedirs(log_dir, exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+        log_path, _ = QFileDialog.getOpenFileName(self, "Load Training Log", log_dir, "CSV Files (*.csv)")
+        if log_path:
+            try:
+                import pandas as pd
+                import matplotlib.pyplot as plt
+
+                # Đọc file CSV
+                data = pd.read_csv(log_path)
+
+                # Kiểm tra các cột cần thiết
+                if "Episode" in data.columns and "Total Reward" in data.columns:
+                    plt.figure(figsize=(10, 6))
+                    plt.plot(data["Episode"], data["Total Reward"], label=os.path.basename(log_path))
+                    plt.xlabel("Episode")
+                    plt.ylabel("Total Reward")
+                    plt.title("Training Performance")
+                    plt.legend()
+                    plt.grid(True)
+                    plt.show()
+                else:
+                    QMessageBox.critical(self, "Error", "Invalid log file format. Required columns: 'Episode', 'Total Reward'.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to load training log: {e}")
 
 
 if __name__ == "__main__":

@@ -4,12 +4,11 @@ from collections import deque
 
 class ReplayBuffer:
     def __init__(self, capacity, alpha=0.6):
-        self.capacity = capacity
-        self.memory = deque(maxlen=capacity)
-        self.priorities = deque(maxlen=capacity)
-        self.pos = 0
-        self.alpha = alpha
-        self.total = 0
+        self.capacity = capacity # Số lượng tối đa của buffer 
+        self.memory = deque(maxlen=capacity) # Danh sách chứa các experience
+        self.priorities = deque(maxlen=capacity) # Danh sách chứa các priority cho các experience
+        self.alpha = alpha # Hệ số alpha cho ưu tiên
+        self.total = 0 # Tổng số experience trong buffer
     
     def push(self, state, action, reward, next_state, done, priority=1.00):
         self.memory.append((state, action, reward, next_state, done))
@@ -39,7 +38,6 @@ class ReplayBuffer:
             pickle.dump({
                 'memory': list(self.memory),
                 'priorities': list(self.priorities),
-                'pos': self.pos,
                 'total': self.total
             }, f)
 
@@ -49,7 +47,6 @@ class ReplayBuffer:
             data = pickle.load(f)
             self.memory = deque(data['memory'], maxlen=self.capacity)
             self.priorities = deque(data['priorities'], maxlen=self.capacity)
-            self.pos = data['pos']
             self.total = data['total']
     
     def __len__(self):

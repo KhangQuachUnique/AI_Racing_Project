@@ -1,12 +1,12 @@
 import math
 import random
 import torch
-import csv 
 import torch.nn as nn
 import torch.optim as optim
 import pygame 
+import csv
 import os
-from ReplayBuffer import ReplayBuffer  
+from ReplayBuffer import ReplayBuffer
 
 # ---------------------------
 # Định nghĩa mạng DQN
@@ -15,11 +15,11 @@ class DQN(nn.Module):
     def __init__(self, INPUT_DIM, OUTPUT_DIM):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(INPUT_DIM, 128),
+            nn.Linear(INPUT_DIM, 256),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(64, OUTPUT_DIM)
+            nn.Linear(128, OUTPUT_DIM)
         )
     
     def forward(self, x):
@@ -29,7 +29,7 @@ class DQN(nn.Module):
 # Class Agent để quản lý logic của DQN
 # ---------------------------
 class Agent:
-    def __init__(self, input_dim=6, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=100000, 
+    def __init__(self, input_dim=5, output_dim=4, batch_size=512, gamma=0.99, lr=1e-3, memory_capacity=20000, 
                  eps_start=0.85, eps_end=0.05, eps_decay=3000, target_update=50, device=None):
         self.name = "DQN Agent"
         self.input_dim = input_dim
@@ -43,7 +43,6 @@ class Agent:
         self.eps_decay = eps_decay
         self.target_update = target_update
         self.device = "cuda"
-        self.training_data = []
         
         self.policy_net = DQN(input_dim, output_dim).to(self.device)
         self.target_net = DQN(input_dim, output_dim).to(self.device)
@@ -51,18 +50,10 @@ class Agent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr)
         self.memory = ReplayBuffer(memory_capacity)
         self.steps_done = 0
+        self.episode_log = []
+        self.step_log = []
         self.stop_training = False  # Biến cờ để dừng huấn luyện
 
-    def save_training_data(self):
-        """Lưu dữ liệu huấn luyện vào file CSV."""
-        if not os.path.exists("training_data"):
-            os.makedirs("training_data")
-        file_path = f"training_data/training_data_{self.name}.csv"
-        with open(file_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Episode", "Total Reward", "Average Reward", "Loss", "Epsilon", "Steps"])
-            for data in self.training_data:
-                writer.writerow(data)
 
     def get_training_parameters(self, batch_size, gamma, lr, eps_start, eps_end, eps_decay, target_update):
         self.batch_size = batch_size
@@ -72,8 +63,7 @@ class Agent:
         self.eps_end = eps_end
         self.eps_decay = eps_decay
         self.target_update = target_update
-        # print(f"Training parameters updated: gamma={gamma}, lr={lr}, eps_start={eps_start}, eps_end={eps_end}, eps_decay={eps_decay}, target_update={target_update}")
-
+        
     def stop(self):
         self.stop_training = True  # Đặt cờ để dừng huấn luyện
 
@@ -91,7 +81,7 @@ class Agent:
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
             return None
-        # print(len(self.memory))
+        
         transitions, indices, weights = self.memory.sample(self.batch_size)
         batch = list(zip(*transitions))
         
@@ -111,13 +101,13 @@ class Agent:
         td_errors = (q_values - expected_q_values).abs().cpu().detach().numpy().squeeze()
         self.memory.update_priorities(indices, td_errors)
 
-        loss_per_sample = nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)
-        # print(loss_per_sample.mean())
-        loss = (weights * loss_per_sample).mean()
+        loss = (weights * nn.SmoothL1Loss(reduction='none')(q_values, expected_q_values)).mean()
         
+        # if self.steps_done % 4 == 0:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
         return loss
 
     def train(self, env, num_episodes=10000, update_status=None, render=True):
@@ -135,7 +125,7 @@ class Agent:
                 episode_loss = 0.0
                 steps = 0
                 
-                while True:
+                while steps < 1000:
                     # Xử lý sự kiện pygame để tránh bị đơ khi alt-tab
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
@@ -157,11 +147,19 @@ class Agent:
                     total_reward += reward
                     steps += 1
                     
-                    self.memory.push(state, action, reward, next_state, done, priority=1.0)
+                    with torch.no_grad():
+                        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+                        next_state_tensor = torch.FloatTensor(next_state).unsqueeze(0).to(self.device)
+                        current_q_value = self.policy_net(state_tensor)[0, action].item()
+                        next_q_value = self.target_net(next_state_tensor).max(1)[0].item() if not done else 0.0
+                        target_q_value = reward + self.gamma * next_q_value
+                        priority = abs(current_q_value - target_q_value)
+                    
+                    self.memory.push(state, action, reward, next_state, done, priority=priority)
                     state = next_state
                     
                     loss = self.optimize_model()
-
+                        
                     if loss is not None:
                         episode_loss += loss.item()
                     
@@ -169,26 +167,32 @@ class Agent:
                         self.target_net.load_state_dict(self.policy_net.state_dict())
                     
                     epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
-
                     env.update_info(episode + 1, total_reward, episode_loss / max(steps, 1), epsilon, steps)
+                    
+                    if loss is not None:
+                        self.step_log.append((episode + 1, loss.item(), current_q_value, epsilon))
+                    else:
+                        self.step_log.append((episode + 1, 0, current_q_value, epsilon))
 
                     if render:
                         env.render()
-                    
+
                     if done:
                         break
                 
-                self.training_data.append([episode + 1, total_reward, total_reward/steps, episode_loss/max(steps, 1), epsilon, steps])
+                self.episode_log.append((episode + 1, total_reward, total_reward / max((steps, 1)), episode_loss / max(steps, 1), steps))
 
                 # Update status in the UI if provided
                 if update_status:
                     update_status(f"Episode: {episode + 1}/{num_episodes} - Reward: {total_reward:.2f}")
-            self.save_training_data()  # Lưu dữ liệu huấn luyện vào file CSV
+
+            self.save_training_data("model_7")
+
         except Exception as e:
             if update_status:
                 update_status(f"Training interrupted: {e}")
+            self.save_training_data("model_7")
         finally:
-            # self.logger.close()  # Đóng TensorBoard logger
             env.close()
 
     def test(self, env, num_episodes=10):
@@ -236,3 +240,26 @@ class Agent:
             "eps_decay": self.eps_decay,
             "target_update": self.target_update
         }
+
+    def save_training_data(self, filename):
+        """Lưu dữ liệu huấn luyện vào file CSV."""
+        try:
+            os.makedirs("./training_log", exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+
+            with open(f"./training_log/{filename}_episode.csv", mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                # Ghi tiêu đề cột
+                writer.writerow(["Episode", "Total Reward", "Average Reward", "Average Loss", "Steps"])
+                # Ghi dữ liệu từng tập
+                for entry in self.episode_log:
+                    writer.writerow(entry)
+            with open(f"./training_log/{filename}_step.csv", mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                # Ghi tiêu đề cột
+                writer.writerow(["Episode", "Loss", "Q-value", "Epsilon"])
+                # Ghi dữ liệu từng bước
+                for entry in self.step_log:
+                    writer.writerow(entry)
+        except Exception as e:
+            print(f"Error saving training data: {e}")
+
