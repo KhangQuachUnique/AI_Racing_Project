@@ -95,13 +95,6 @@ class DQN(nn.Module):
 
 ## � Results & Performance Metrics
 
-### 🎯 **Training Performance**
-
-- **Convergence Rate**: Consistent improvement over 400+ episodes
-- **Success Rate**: 95%+ track completion after training
-- **Training Efficiency**: 4-6 hours for competitive performance (GPU)
-- **Model Size**: Compact 50KB models with high performance
-
 ### 📊 **Performance Improvements**
 
 | Aspect                     | Improvement Description                                          |
@@ -190,17 +183,6 @@ matplotlib>=3.5.0 # Data visualization
 
 ---
 
-## 📞 Professional Contact
-
-**Ready for Technical Discussions**
-
-- Deep dive into DQN implementation details
-- Architecture decisions and trade-offs
-- Performance optimization strategies
-- Extension possibilities and future work
-
-_This project demonstrates readiness for ML Engineer, AI Developer, or Research roles requiring hands-on deep learning expertise._
-
 ## 🙏 Acknowledgments & References
 
 ### 📚 **Core Inspiration**
@@ -231,4 +213,5 @@ _This project demonstrates readiness for ML Engineer, AI Developer, or Research 
 ---
 
 _This project represents a significant evolution from the original tutorial, incorporating advanced RL techniques, professional software architecture, and production-ready implementation for portfolio demonstration._
+
 
