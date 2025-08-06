@@ -1,4 +1,7 @@
-﻿# 🏁 AI Racing Project - Deep Reinforcement Learning for Autonomous Driving
+# 🏁 AI Racing Project - Deep Reinforcement Learning for Autonomous Driving
+
+🚧 This repository is archived / no longer maintained as of May 2025.
+Feel free to fork or use the code as needed.
 
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
@@ -213,5 +216,6 @@ matplotlib>=3.5.0 # Data visualization
 ---
 
 _This project represents a significant evolution from the original tutorial, incorporating advanced RL techniques, professional software architecture, and production-ready implementation for portfolio demonstration._
+
 
 
